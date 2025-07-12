@@ -1,10 +1,10 @@
-import {Request, Response} from 'express'
+import { Request, Response } from "express";
 
 export default {
-    dummy(req: Request, res: Response) {
-        res.status(200).json({
-            message: "Success hit endpoint /dummy - modified",
-            data: "OK"
-        })
-    }
-}
+  dummy(req: Request, res: Response) {
+    res.status(200).json({
+      message: "Success hit endpoint /dummy - modified",
+      data: "OK",
+    });
+  },
+};
