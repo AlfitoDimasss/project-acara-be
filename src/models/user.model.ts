@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, {HydratedDocument} from "mongoose";
 import {encrypt} from "../utils/encryption";
 import {renderMailContent, sendMail} from "../utils/mail/mail";
-import {CLIENT_HOST, EMAIL_SMTP_USER} from "../utils/env";
+import {CLIENT_HOST} from "../utils/env";
 
 export interface User {
     fullName: string;
@@ -60,22 +60,27 @@ const UserSchema = new Schema<User>(
 );
 
 UserSchema.pre("save", function (next) {
-    const user = this;
-    user.password = encrypt(user.password);
-    user.activationCode = encrypt(user.id);
+    const user = this as HydratedDocument<User>;
+    if (user.isModified("password")) {
+        user.password = encrypt(user.password);
+    }
+    if (!user.activationCode) {
+        user.activationCode = encrypt(user.id);
+    }
     next();
 });
 
 UserSchema.post("save", async function (doc, next) {
+    const user = doc as HydratedDocument<User>;
+    if (!user.activationCode) return next();
     try {
-        const user = doc;
         console.log(`Sending email to: ${user.email}`);
         const contentMail = await renderMailContent("registration-success.ejs", {
             username: user.username,
             fullName: user.fullName,
             email: user.email,
             createdAt: user.createdAt,
-            activationLink: `${CLIENT_HOST}/auth/activation?code=${this.activationCode}`,
+            activationLink: `${CLIENT_HOST}/auth/activation?code=${user.activationCode}`,
         });
 
         await sendMail({

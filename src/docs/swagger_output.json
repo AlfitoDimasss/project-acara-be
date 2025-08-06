@@ -16,16 +16,6 @@
     }
   ],
   "paths": {
-    "/dummy": {
-      "get": {
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/auth/register": {
       "post": {
         "tags": [
@@ -33,11 +23,8 @@
         ],
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
+          "default": {
+            "description": ""
           }
         },
         "requestBody": {
@@ -75,14 +62,8 @@
         ],
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
+          "default": {
+            "description": ""
           }
         },
         "requestBody": {
@@ -118,14 +99,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
+          "default": {
+            "description": ""
           }
         },
         "security": [
@@ -142,11 +117,8 @@
         ],
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
+          "default": {
+            "description": ""
           }
         },
         "requestBody": {

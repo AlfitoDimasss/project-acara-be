@@ -3,6 +3,10 @@ import {EMAIL_SMTP_HOST, EMAIL_SMTP_PASS, EMAIL_SMTP_PORT, EMAIL_SMTP_SECURE, EM
 import ejs from "ejs";
 import path from "path";
 
+if (!EMAIL_SMTP_USER || !EMAIL_SMTP_PASS || !EMAIL_SMTP_HOST) {
+    console.warn("⚠️ SMTP config is missing. Email service may not work.");
+}
+
 const transporter = nodemailer.createTransport({
     port: EMAIL_SMTP_PORT,
     host: EMAIL_SMTP_HOST,
@@ -22,21 +26,25 @@ export interface ISendMail {
 }
 
 export const sendMail = async ({from, to, subject, html}: ISendMail) => {
-    return await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-    });
+    try {
+        return await transporter.sendMail({from, to, subject, html});
+    } catch (error) {
+        console.error(`❌ Failed to send email to ${to}:`, error);
+        throw new Error("Failed to send email");
+    }
 };
 
 export const renderMailContent = async (
     template: string,
-    data: any
+    data: Record<string, any>
 ): Promise<string> => {
-    const content = await ejs.renderFile(
-        path.join(__dirname, `templates/${template}`),
-        data
-    );
-    return content as string;
+    try {
+        return await ejs.renderFile(
+            path.join(__dirname, `templates/${template}`),
+            data
+        );
+    } catch (error) {
+        console.error(`Failed to render email template: ${template}`, error);
+        throw new Error("Failed to render email template.");
+    }
 };

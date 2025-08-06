@@ -4,6 +4,7 @@ import UserModel from "../models/user.model";
 import {encrypt} from "../utils/encryption";
 import {generateToken} from "../utils/jwt";
 import {IReqUser} from "../middlewares/auth.middleware";
+import {sendResponse} from "../utils/sendResponse";
 
 type TRegister = {
     fullName: string;
@@ -18,22 +19,27 @@ type TLogin = {
     password: string;
 };
 
+const hasUppercase = /[A-Z]/;
+const hasNumber = /\d/;
+
 const registerValidateSchema = Yup.object({
-    fullName: Yup.string().required(),
-    username: Yup.string().required(),
-    email: Yup.string().email().required(),
-    password: Yup.string().required().min(6, "Password must be at least 6 character").test("at-leat-one-uppercase", "Password must contain one uppercase", (value) => {
-        if (!value) return false;
-        const regex = /^(?=.*[A-Z])/;
-        return regex.test(value);
-    }).test("at-leat-one-number", "Password must contain one number", (value) => {
-        if (!value) return false;
-        const regex = /^(?=.*\d)/;
-        return regex.test(value);
-    }),
-    confirmPassword: Yup.string()
-        .required()
+    fullName: Yup.string().required("Full name is required"),
+    username: Yup.string().required("Username is required"),
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    password: Yup.string().required("Password is required").min(6, "Password must be at least 6 character")
+        .test("uppercase", "Password must contain at least one uppercase letter", (value) => {
+            return hasUppercase.test(value || "");
+        })
+        .test("at-leat-one-number", "Password must contain one number", (value) => {
+            return hasNumber.test(value || "");
+        }),
+    confirmPassword: Yup.string().required("Confirm password is required")
         .oneOf([Yup.ref("password"), ""], "Password is not match"),
+});
+
+const loginValidateSchema = Yup.object({
+    identifier: Yup.string().required("Identifier is required"),
+    password: Yup.string().required("Password is required")
 });
 
 export default {
@@ -59,16 +65,10 @@ export default {
                 password,
             });
 
-            res.status(200).json({
-                message: "Success",
-                data: result,
-            });
-        } catch (e) {
-            const err = e as unknown as Error;
-            res.status(400).json({
-                message: err.message,
-                data: null,
-            });
+            sendResponse(res, 200, "Success", result);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            sendResponse(res, 400, message);
         }
     },
     async login(req: Request, res: Response) {
@@ -82,6 +82,10 @@ export default {
         const {identifier, password} = req.body as unknown as TLogin;
 
         try {
+            await loginValidateSchema.validate({
+                identifier, password
+            });
+
             const userByIdentifier = await UserModel.findOne({
                 $or: [
                     {
@@ -95,20 +99,14 @@ export default {
             });
 
             if (!userByIdentifier) {
-                return res.status(403).json({
-                    message: "user not found",
-                    data: null,
-                });
+                return sendResponse(res, 403, "Invalid credential");
             }
 
             const validatePassword: boolean =
                 encrypt(password) === userByIdentifier.password;
 
             if (!validatePassword) {
-                return res.status(403).json({
-                    message: "user not found",
-                    data: null,
-                });
+                return sendResponse(res, 403, "Invalid credential");
             }
 
             const token = generateToken({
@@ -116,16 +114,10 @@ export default {
                 role: userByIdentifier.role,
             });
 
-            res.status(200).json({
-                message: "Login success",
-                data: token,
-            });
+            sendResponse(res, 200, "Login success", token);
         } catch (error) {
-            const err = error as unknown as Error;
-            res.status(400).json({
-                message: err.message,
-                data: null,
-            });
+            const message = error instanceof Error ? error.message : "Unknown error";
+            sendResponse(res, 400, message);
         }
     },
     async me(req: IReqUser, res: Response) {
@@ -138,16 +130,10 @@ export default {
         try {
             const user = req.user;
             const result = await UserModel.findById(user?.id);
-            res.status(200).json({
-                message: "Success Login",
-                data: result,
-            });
+            sendResponse(res, 200, "Login success", result);
         } catch (error) {
-            const err = error as unknown as Error;
-            res.status(400).json({
-                message: err.message,
-                data: null,
-            });
+            const message = error instanceof Error ? error.message : "Unknown error";
+            sendResponse(res, 400, message);
         }
     },
     async activation(req: Request, res: Response) {
@@ -172,16 +158,10 @@ export default {
                 }
             );
 
-            res.status(200).json({
-                message: "User successfully activated",
-                data: user
-            });
+            sendResponse(res, 200, "User successfully activated", user);
         } catch (error) {
-            const err = error as unknown as Error;
-            res.status(400).json({
-                message: err.message,
-                data: null,
-            });
+            const message = error instanceof Error ? error.message : "Unknown error";
+            sendResponse(res, 400, message);
         }
     }
 };

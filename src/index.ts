@@ -5,34 +5,32 @@ import bodyParser from "body-parser";
 import connect from "./utils/database";
 import docs from "./docs/route";
 import cors from "cors";
+import {sendResponse} from "./utils/sendResponse";
 
 async function init() {
-  try {
-    const result = await connect();
-    console.log(`DB Status: ${result}`);
+    try {
+        const result = await connect();
+        console.log(`DB Status: ${result}`);
 
-    const PORT = 3000;
-    const app = express();
+        const PORT = 3000;
+        const app = express();
 
-    app.use(cors());
-    app.use(bodyParser.json());
+        app.use(cors());
+        app.use(bodyParser.json());
 
-    app.get("/", (req, res) => {
-      res.status(200).json({
-        message: "Server is running",
-        data: null,
-      });
-    });
+        app.get("/", (req, res) => {
+            sendResponse(res, 200, "Server is running");
+        });
 
-    app.use("/api", router);
-    docs(app);
+        app.use("/api", router);
+        docs(app);
 
-    app.listen(PORT, () => {
-      console.log(`Server listening on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error(error);
-  }
+        app.listen(PORT, () => {
+            console.log(`Server listening on http://localhost:${PORT}`);
+        });
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 init();
